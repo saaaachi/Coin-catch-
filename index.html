@@ -5,30 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Coin Catch Slime</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #fff9c4; font-family: sans-serif; }
-        #ad-top { position: fixed; top: 0; left: 0; width: 100%; height: 110px; background: #333; z-index: 100; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-        #ad-bottom { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: #333; z-index: 100; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-        #ad-box-1, #ad-box-2 { pointer-events: auto; }
-        canvas { display: block; margin-top: 110px; background: #fff176; }
-        #ui { position: absolute; top: 120px; left: 0; width: 100%; text-align: center; color: #f57f17; font-size: 24px; font-weight: bold; pointer-events: none; }
-        #startScreen { position: absolute; top: 110px; left: 0; width: 100%; height: calc(100% - 180px); background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; }
-        #goButton { padding: 15px 40px; font-size: 24px; background: #fb8c00; border: none; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; }
+        body { margin: 0; overflow: hidden; background: #fff9c4; font-family: sans-serif; touch-action: none; }
+        
+        /* 広告エリア：高さを150pxに設定（中サイズ対応） */
+        #ad-top, #ad-bottom { 
+            position: fixed; left: 0; width: 100%; height: 150px; 
+            background: #333; z-index: 100; display: flex; align-items: center; justify-content: center; 
+        }
+        #ad-top { top: 0; }
+        #ad-bottom { bottom: 0; }
+        
+        iframe { border: none; width: 100%; height: 150px; }
+
+        /* キャンバス：上下の広告枠を避けて配置 */
+        canvas { display: block; margin-top: 150px; background: #fff176; }
+        
+        #ui { position: absolute; top: 160px; left: 0; width: 100%; text-align: center; color: #f57f17; font-size: 26px; font-weight: bold; pointer-events: none; text-shadow: 1px 1px 2px white; }
+        
+        #startScreen { 
+            position: absolute; top: 150px; left: 0; width: 100%; height: calc(100vh - 300px); 
+            background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; 
+        }
+        #goButton { padding: 15px 40px; font-size: 24px; background: #fb8c00; border: none; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px #e67e22; }
+        #best-info { margin-top: 15px; color: #f57f17; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="ad-top"><div id="ad-box-1"><!-- admax -->
-<script src="https://adm.shinobi.jp/s/ac3df01895cb5dfb52f8c304a578b068"></script>
-<!-- admax --></div></div>
-    <div id="ad-bottom"><div id="ad-box-2"><!-- admax -->
-<script src="https://adm.shinobi.jp/s/4b58ae2d25974db7e830cd142506e847"></script>
-<!-- admax --></div></div>
+    <div id="ad-top"><iframe id="frame-top" src="ad.html"></iframe></div>
+    <div id="ad-bottom"><iframe id="frame-bottom" src="ad.html"></iframe></div>
 
     <div id="startScreen">
-        <h1 style="color:#f57f17;">COIN CATCH</h1>
-        <p>左右スライドでコインを拾え！</p>
+        <h1 style="color:#f57f17; margin-bottom: 10px;">COIN CATCH</h1>
+        <p style="margin-bottom: 20px;">左右スライドでコインを拾え！</p>
         <button id="goButton">START</button>
-        <p>BEST: <span id="best-ui">0</span></p>
+        <p id="best-info">BEST SCORE: <span id="best-ui">0</span></p>
     </div>
 
     <div id="ui">SCORE: 0</div>
@@ -42,16 +53,17 @@
         const goButton = document.getElementById("goButton");
         const bestUi = document.getElementById("best-ui");
 
+        // キャンバスサイズ設定
         canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight - 180;
+        canvas.height = window.innerHeight - 300;
 
         let score = 0;
         let bestScore = localStorage.getItem("coin_catch_best") || 0;
         let gameActive = false;
         let items = [];
         let playerX = canvas.width / 2;
-        const playerY = canvas.height - 40;
-        const playerSize = 30;
+        const playerY = canvas.height - 50; // 底から少し浮かす
+        const playerSize = 35;
 
         bestUi.innerText = bestScore;
 
@@ -65,56 +77,60 @@
             update();
         };
 
-        // 指でスライド操作
-        canvas.addEventListener("touchmove", (e) => {
+        // 操作：指の位置にスライムを追従
+        function handleMove(e) {
             if(!gameActive) return;
-            e.preventDefault();
-            let touch = e.touches[0];
-            playerX = touch.clientX;
-        }, {passive: false});
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            playerX = clientX;
+            
+            // 画面外防止
+            if(playerX < playerSize) playerX = playerSize;
+            if(playerX > canvas.width - playerSize) playerX = canvas.width - playerSize;
+        }
 
-        // PCマウス操作用
-        canvas.addEventListener("mousemove", (e) => {
-            if(!gameActive) return;
-            playerX = e.clientX;
-        });
+        canvas.addEventListener("touchmove", (e) => { handleMove(e); e.preventDefault(); }, {passive: false});
+        canvas.addEventListener("mousemove", handleMove);
 
         function spawnItem() {
             if(!gameActive) return;
-            const isBomb = Math.random() < 0.2; // 20%の確率で爆弾
+            const isBomb = Math.random() < 0.25; // 爆弾率を少しアップ
             items.push({
-                x: Math.random() * (canvas.width - 30),
+                x: Math.random() * (canvas.width - 40) + 20,
                 y: -30,
                 type: isBomb ? "bomb" : "coin",
-                speed: 3 + Math.random() * 4 + (score / 15)
+                speed: 3.5 + Math.random() * 3 + (score / 100)
             });
-            setTimeout(spawnItem, Math.max(300, 800 - (score * 10)));
+            setTimeout(spawnItem, Math.max(250, 750 - (score / 2)));
         }
 
         function update() {
             if(!gameActive) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // プレイヤー（スライム）描画
+            // プレイヤー（緑スライム）描画
             ctx.fillStyle = "#4caf50";
             ctx.beginPath();
             ctx.arc(playerX, playerY, playerSize, 0, Math.PI, true);
-            ctx.lineTo(playerX - playerSize, playerY);
             ctx.fill();
+            // 目を描く
+            ctx.fillStyle = "white";
+            ctx.beginPath(); ctx.arc(playerX - 10, playerY - 15, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(playerX + 10, playerY - 15, 5, 0, Math.PI * 2); ctx.fill();
 
             for(let i = items.length - 1; i >= 0; i--) {
                 let it = items[i];
                 it.y += it.speed;
 
-                // アイテム描画
                 if(it.type === "coin") {
+                    // コイン描画
                     ctx.fillStyle = "#ffd600";
                     ctx.beginPath(); ctx.arc(it.x, it.y, 15, 0, Math.PI * 2); ctx.fill();
-                    ctx.strokeStyle = "#f57f17"; ctx.stroke();
+                    ctx.strokeStyle = "#f57f17"; ctx.lineWidth = 2; ctx.stroke();
                 } else {
+                    // 爆弾描画
                     ctx.fillStyle = "#212121";
                     ctx.beginPath(); ctx.arc(it.x, it.y, 18, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = "red"; ctx.fillRect(it.x-2, it.y-25, 4, 10); // 導火線
+                    ctx.fillStyle = "red"; ctx.fillRect(it.x - 2, it.y - 28, 4, 10);
                 }
 
                 // 当たり判定
@@ -122,7 +138,7 @@
                 let dy = playerY - it.y;
                 let dist = Math.sqrt(dx * dx + dy * dy);
 
-                if(dist < playerSize + 15) {
+                if(dist < playerSize + 12) {
                     if(it.type === "coin") {
                         score += 10;
                         ui.innerText = "SCORE: " + score;
@@ -131,7 +147,7 @@
                         gameOver();
                         return;
                     }
-                } else if(it.y > canvas.height) {
+                } else if(it.y > canvas.height + 50) {
                     items.splice(i, 1);
                 }
             }
@@ -148,17 +164,16 @@
             location.reload();
         }
 
-        // 20.1秒リフレッシュ
+        // 🚀 30秒ごとに広告を転生（強制リフレッシュ）
         setInterval(() => {
-            ["ad-box-1", "ad-box-2"].forEach(id => {
-                const box = document.getElementById(id);
-                if (box && box.innerHTML.trim() !== "★") {
-                    const tag = box.innerHTML;
-                    box.innerHTML = "";
-                    setTimeout(() => { box.innerHTML = tag; }, 100);
+            ["frame-top", "frame-bottom"].forEach(id => {
+                const f = document.getElementById(id);
+                if(f) {
+                    const s = f.src; f.src = "about:blank";
+                    setTimeout(() => f.src = s, 100);
                 }
             });
-        }, 20020);
+        }, 29000);
     </script>
 </body>
 </html>
