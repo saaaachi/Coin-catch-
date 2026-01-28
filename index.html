@@ -5,85 +5,114 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Coin Catch Slime</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #fff9c4; font-family: sans-serif; touch-action: none; }
+        body { 
+            margin: 0; height: 100vh; display: flex; flex-direction: column; 
+            background: #fff9c4; font-family: sans-serif; overflow: hidden; touch-action: none; 
+        }
         
-        /* 広告エリア：高さを150pxに設定（中サイズ対応） */
+        /* 上下の広告エリア：150px（中サイズ対応） */
         #ad-top, #ad-bottom { 
-            position: fixed; left: 0; width: 100%; height: 150px; 
-            background: #333; z-index: 100; display: flex; align-items: center; justify-content: center; 
+            width: 100%; height: 150px; background: #333; 
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 100;
         }
-        #ad-top { top: 0; }
-        #ad-bottom { bottom: 0; }
-        
-        iframe { border: none; width: 100%; height: 150px; }
+        iframe { border: none; width: 100%; height: 100%; }
 
-        /* キャンバス：上下の広告枠を避けて配置 */
-        canvas { display: block; margin-top: 150px; background: #fff176; }
-        
-        #ui { position: absolute; top: 160px; left: 0; width: 100%; text-align: center; color: #f57f17; font-size: 26px; font-weight: bold; pointer-events: none; text-shadow: 1px 1px 2px white; }
-        
-        #startScreen { 
-            position: absolute; top: 150px; left: 0; width: 100%; height: calc(100vh - 300px); 
-            background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; 
+        /* ゲームエリア */
+        #game-area { 
+            flex-grow: 1; position: relative; width: 100%; background: #fff176; overflow: hidden;
         }
-        #goButton { padding: 15px 40px; font-size: 24px; background: #fb8c00; border: none; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px #e67e22; }
-        #best-info { margin-top: 15px; color: #f57f17; font-weight: bold; }
+        
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: #f57f17; font-size: 26px; font-weight: bold; pointer-events: none; z-index: 10; text-shadow: 1px 1px 2px white; }
+        
+        /* メニュー画面：鉄壁レイアウト */
+        #menuScreen { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.95); display: flex; flex-direction: column; 
+            align-items: center; justify-content: space-between; z-index: 200; padding: 10px 0; box-sizing: border-box;
+        }
+
+        #ad-middle-container { 
+            width: 300px; height: 250px; background: #ddd;
+            display: none; justify-content: center; align-items: center; 
+            overflow: hidden; flex-shrink: 0; border: 1px solid #ccc;
+        }
+        
+        .btn-group { 
+            display: flex; flex-direction: column; align-items: center; gap: 8px; 
+            width: 100%; padding-bottom: 5px;
+        }
+        .menu-btn { padding: 12px 30px; font-size: 17px; border: none; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; text-decoration: none; width: 220px; text-align: center; }
+        #goButton { background: #fb8c00; box-shadow: 0 4px #e67e22; }
+        .link-btn { background: #ff4081; box-shadow: 0 4px #c2185b; }
+        .best-info { color: #f57f17; font-size: 18px; font-weight: bold; margin: 2px 0; }
     </style>
 </head>
 <body>
+    <div id="ad-top"><iframe src="ad.html" id="frame-top"></iframe></div>
 
-    <div id="ad-top"><iframe id="frame-top" src="ad.html"></iframe></div>
-    <div id="ad-bottom"><iframe id="frame-bottom" src="ad.html"></iframe></div>
+    <div id="game-area">
+        <div id="ui">SCORE: 0</div>
+        
+        <div id="menuScreen">
+            <div style="text-align:center;">
+                <h1 id="menuTitle" style="color:#f57f17; margin:0; font-size: 24px;">COIN CATCH</h1>
+                <p id="menuMsg" style="margin:2px 0; font-size:14px;">左右スライドでコインを拾え！</p>
+                <div class="best-info">BEST SCORE: <span id="best-ui">0</span></div>
+            </div>
 
-    <div id="startScreen">
-        <h1 style="color:#f57f17; margin-bottom: 10px;">COIN CATCH</h1>
-        <p style="margin-bottom: 20px;">左右スライドでコインを拾え！</p>
-        <button id="goButton">START</button>
-        <p id="best-info">BEST SCORE: <span id="best-ui">0</span></p>
+            <div id="ad-middle-container">
+                <script src="https://adm.shinobi.jp/s/1e6de436ea850948e238e975a93767eb"></script>
+            </div>
+
+            <div class="btn-group" id="btnGroup">
+                <button id="goButton" class="menu-btn">GAME START</button>
+                <a href="https://saaaachi.github.io/Color.Match/" class="menu-btn link-btn">他のゲームはこちら</a>
+            </div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
     </div>
 
-    <div id="ui">SCORE: 0</div>
-    <canvas id="gameCanvas"></canvas>
+    <div id="ad-bottom"><iframe src="ad.html" id="frame-bottom"></iframe></div>
 
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        const ui = document.getElementById("ui");
-        const startScreen = document.getElementById("startScreen");
-        const goButton = document.getElementById("goButton");
-        const bestUi = document.getElementById("best-ui");
+        const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d"),
+              ui = document.getElementById("ui"), menuScreen = document.getElementById("menuScreen"),
+              menuTitle = document.getElementById("menuTitle"), menuMsg = document.getElementById("menuMsg"),
+              bestUi = document.getElementById("best-ui"), goButton = document.getElementById("goButton"),
+              adMid = document.getElementById("ad-middle-container"), btnGroup = document.getElementById("btnGroup");
 
-        // キャンバスサイズ設定
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight - 300;
+        let score = 0, bestScore = localStorage.getItem("coin_catch_best") || 0;
+        let gameActive = false, items = [], playerX, spawnTimer;
+        const playerSize = 35, playerY_offset = 50;
 
-        let score = 0;
-        let bestScore = localStorage.getItem("coin_catch_best") || 0;
-        let gameActive = false;
-        let items = [];
-        let playerX = canvas.width / 2;
-        const playerY = canvas.height - 50; // 底から少し浮かす
-        const playerSize = 35;
-
-        bestUi.innerText = bestScore;
+        function resize() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            playerX = canvas.width / 2;
+        }
+        window.onload = () => { resize(); bestUi.innerText = bestScore; adMid.style.display = "none"; };
+        window.onresize = resize;
 
         goButton.onclick = () => {
-            startScreen.style.display = "none";
+            menuScreen.style.display = "none";
+            adMid.style.display = "none";
             gameActive = true;
             score = 0;
             items = [];
             ui.innerText = "SCORE: 0";
+            resize();
             spawnItem();
             update();
         };
 
-        // 操作：指の位置にスライムを追従
         function handleMove(e) {
-            if(!gameActive) return;
+            if(!gameActive || menuScreen.style.display !== "none") return;
+            const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            playerX = clientX;
+            playerX = clientX - rect.left;
             
-            // 画面外防止
             if(playerX < playerSize) playerX = playerSize;
             if(playerX > canvas.width - playerSize) playerX = canvas.width - playerSize;
         }
@@ -93,49 +122,48 @@
 
         function spawnItem() {
             if(!gameActive) return;
-            const isBomb = Math.random() < 0.25; // 爆弾率を少しアップ
+            const isBomb = Math.random() < 0.25;
             items.push({
                 x: Math.random() * (canvas.width - 40) + 20,
                 y: -30,
                 type: isBomb ? "bomb" : "coin",
                 speed: 3.5 + Math.random() * 3 + (score / 100)
             });
-            setTimeout(spawnItem, Math.max(250, 750 - (score / 2)));
+            const nextTime = Math.max(250, 750 - (score / 2));
+            spawnTimer = setTimeout(spawnItem, nextTime);
         }
 
         function update() {
             if(!gameActive) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // プレイヤー（緑スライム）描画
+            const pY = canvas.height - playerY_offset;
+
+            // プレイヤー描画
             ctx.fillStyle = "#4caf50";
             ctx.beginPath();
-            ctx.arc(playerX, playerY, playerSize, 0, Math.PI, true);
+            ctx.arc(playerX, pY, playerSize, 0, Math.PI, true);
             ctx.fill();
-            // 目を描く
             ctx.fillStyle = "white";
-            ctx.beginPath(); ctx.arc(playerX - 10, playerY - 15, 5, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(playerX + 10, playerY - 15, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(playerX - 10, pY - 15, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(playerX + 10, pY - 15, 5, 0, Math.PI * 2); ctx.fill();
 
             for(let i = items.length - 1; i >= 0; i--) {
                 let it = items[i];
                 it.y += it.speed;
 
                 if(it.type === "coin") {
-                    // コイン描画
                     ctx.fillStyle = "#ffd600";
                     ctx.beginPath(); ctx.arc(it.x, it.y, 15, 0, Math.PI * 2); ctx.fill();
                     ctx.strokeStyle = "#f57f17"; ctx.lineWidth = 2; ctx.stroke();
                 } else {
-                    // 爆弾描画
                     ctx.fillStyle = "#212121";
                     ctx.beginPath(); ctx.arc(it.x, it.y, 18, 0, Math.PI * 2); ctx.fill();
                     ctx.fillStyle = "red"; ctx.fillRect(it.x - 2, it.y - 28, 4, 10);
                 }
 
-                // 当たり判定
                 let dx = playerX - it.x;
-                let dy = playerY - it.y;
+                let dy = pY - it.y;
                 let dist = Math.sqrt(dx * dx + dy * dy);
 
                 if(dist < playerSize + 12) {
@@ -156,24 +184,33 @@
 
         function gameOver() {
             gameActive = false;
+            clearTimeout(spawnTimer);
             if(score > bestScore) {
                 bestScore = score;
                 localStorage.setItem("coin_catch_best", bestScore);
+                bestUi.innerText = bestScore;
             }
-            alert("GAME OVER!\nSCORE: " + score);
-            location.reload();
+            menuTitle.innerText = "GAME OVER";
+            menuTitle.style.color = "#f44336";
+            menuMsg.innerText = "SCORE: " + score;
+            goButton.innerText = "RETRY";
+
+            btnGroup.style.opacity = "0";
+            btnGroup.style.pointerEvents = "none";
+            adMid.style.display = "flex"; 
+            menuScreen.style.display = "flex";
+
+            setTimeout(() => {
+                btnGroup.style.opacity = "1";
+                btnGroup.style.pointerEvents = "auto";
+            }, 600);
         }
 
-        // 🚀 30秒ごとに広告を転生（強制リフレッシュ）
         setInterval(() => {
-            ["frame-top", "frame-bottom"].forEach(id => {
-                const f = document.getElementById(id);
-                if(f) {
-                    const s = f.src; f.src = "about:blank";
-                    setTimeout(() => f.src = s, 100);
-                }
+            document.querySelectorAll('iframe').forEach(f => {
+                const s = f.src; f.src = "about:blank"; setTimeout(() => f.src = s, 100);
             });
-        }, 29000);
+        }, 30000);
     </script>
 </body>
 </html>
