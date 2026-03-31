@@ -3,89 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Coin Catch Slime</title>
+    <title>Coin Catch Slime - Greedy Slime</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1299640300068792" crossorigin="anonymous"></script>
     <style>
-        body { 
-            margin: 0; height: 100vh; display: flex; flex-direction: column; 
-            background: #fff9c4; font-family: sans-serif; overflow: hidden; touch-action: none; 
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; touch-action: none; }
+        body { background: #fff9c4; font-family: 'Hiragino Sans', 'Meiryo', sans-serif; display: flex; flex-direction: column; color: #333; }
         
-        /* 上下の広告エリア：150px（中サイズ対応） */
-        #ad-top, #ad-bottom { 
-            width: 100%; height: 150px; background: #333; 
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 100;
-        }
-        iframe { border: none; width: 100%; height: 100%; }
+        /* 上部広告：100px 固定 */
+        #ad-top { width: 100%; height: 100px; background: #333; display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 100; border-bottom: 2px solid #f57f17; }
 
         /* ゲームエリア */
-        #game-area { 
-            flex-grow: 1; position: relative; width: 100%; background: #fff176; overflow: hidden;
-        }
-        
+        #game-area { flex-grow: 1; position: relative; width: 100%; background: #fff176; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; }
         
-        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: #f57f17; font-size: 26px; font-weight: bold; pointer-events: none; z-index: 10; text-shadow: 1px 1px 2px white; }
-        
-        /* メニュー画面：鉄壁レイアウト */
+        #ui { position: absolute; top: 15px; width: 100%; text-align: center; color: #f57f17; font-size: 28px; font-weight: bold; pointer-events: none; z-index: 10; text-shadow: 2px 2px 0 white; }
+
+        /* メニュー画面 */
         #menuScreen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(255,255,255,0.95); display: flex; flex-direction: column; 
-            align-items: center; justify-content: space-between; z-index: 200; padding: 10px 0; box-sizing: border-box;
+            background: rgba(255,255,255,0.96); display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 500; padding: 20px;
         }
 
-        #ad-middle-container { 
-            width: 300px; height: 250px; background: #ddd;
-            display: none; justify-content: center; align-items: center; 
-            overflow: hidden; flex-shrink: 0; border: 1px solid #ccc;
+        /* 収益の柱：レクタングル広告 */
+        #ad-middle-box {
+            width: 300px; height: 250px; background: #eee;
+            margin: 15px 0; display: none; justify-content: center; align-items: center;
+            border: 1px solid #ccc; border-radius: 10px; overflow: hidden;
         }
         
-        .btn-group { 
-            display: flex; flex-direction: column; align-items: center; gap: 8px; 
-            width: 100%; padding-bottom: 5px;
-        }
-        .menu-btn { padding: 12px 30px; font-size: 17px; border: none; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; text-decoration: none; width: 220px; text-align: center; }
-        #goButton { background: #fb8c00; box-shadow: 0 4px #e67e22; }
-        .link-btn { background: #ff4081; box-shadow: 0 4px #c2185b; }
-        .best-info { color: #f57f17; font-size: 18px; font-weight: bold; margin: 2px 0; }
+        .btn-group { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 12px; }
+        .menu-btn { width: 280px; padding: 18px; font-size: 20px; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; }
+        #goButton { background: #fb8c00; color: white; box-shadow: 0 5px #e67e22; }
+        #goButton:disabled { background: #bbb; box-shadow: none; color: #777; }
+        .sub-btn { background: #ff4081; color: white; box-shadow: 0 5px #c2185b; font-size: 16px; }
+
+        /* インタースティシャル */
+        #inter-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 99999; align-items: center; justify-content: center; }
+        .inter-content { width: 330px; height: 350px; background: #fff; position: relative; border-radius: 15px; }
+        #close-ad-btn { position: absolute; top: -55px; right: 0; width: 45px; height: 45px; background: #333; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 2px solid #fff; cursor: pointer; }
     </style>
 </head>
-<body>
-    <div id="ad-top"><iframe src="ad.html" id="frame-top"></iframe></div>
+<body oncontextmenu="return false;">
+
+    <div id="ad-top">
+        <ins class="adsbygoogle" style="display:inline-block;width:320px;height:100px" data-ad-client="ca-pub-1299640300068792" data-ad-slot="3972022911"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
 
     <div id="game-area">
         <div id="ui">SCORE: 0</div>
         
         <div id="menuScreen">
             <div style="text-align:center;">
-                <h1 id="menuTitle" style="color:#f57f17; margin:0; font-size: 24px;">COIN CATCH</h1>
-                <p id="menuMsg" style="margin:2px 0; font-size:14px;">左右スライドでコインを拾え！</p>
-                <div class="best-info">BEST SCORE: <span id="best-ui">0</span></div>
+                <h1 id="menuTitle" style="color:#f57f17; margin:0; font-size: 32px;">COIN CATCH</h1>
+                <p id="menuMsg" style="margin:5px 0; color: #e67e22;">スライドしてコインをキャッチ！</p>
+                <div style="color: #f57f17; font-size: 22px; font-weight: bold; margin: 5px 0;">BEST: <span id="best-ui">0</span></div>
             </div>
 
-            <div id="ad-middle-container">
-                <script src="https://adm.shinobi.jp/s/1e6de436ea850948e238e975a93767eb"></script>
+            <div id="ad-middle-box">
+                <ins class="adsbygoogle" style="display:inline-block;width:300px;height:250px" data-ad-client="ca-pub-1299640300068792" data-ad-slot="9050127185"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
             </div>
 
-            <div class="btn-group" id="btnGroup">
-                <button id="goButton" class="menu-btn">GAME START</button>
-                <a href="https://saaaachi.github.io/Color.Match/" class="menu-btn link-btn">他のゲームはこちら</a>
+            <div class="btn-group">
+                <button id="goButton" class="menu-btn" onclick="startGame()">START GAME</button>
+                <a href="https://saaaachi.github.io/" class="sub-btn menu-btn">他のゲームを見る</a>
             </div>
         </div>
+        
         <canvas id="gameCanvas"></canvas>
-    </div>
 
-    <div id="ad-bottom"><iframe src="ad.html" id="frame-bottom"></iframe></div>
+        <div id="inter-screen">
+            <div class="inter-content">
+                <div id="close-ad-btn" onclick="closeInterAd()">5</div>
+                <iframe id="ifr-inter" src="about:blank" style="width:100%; height:100%; border:none; border-radius:15px; background:#fff;"></iframe>
+            </div>
+        </div>
+    </div>
 
     <script>
         const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d"),
               ui = document.getElementById("ui"), menuScreen = document.getElementById("menuScreen"),
               menuTitle = document.getElementById("menuTitle"), menuMsg = document.getElementById("menuMsg"),
               bestUi = document.getElementById("best-ui"), goButton = document.getElementById("goButton"),
-              adMid = document.getElementById("ad-middle-container"), btnGroup = document.getElementById("btnGroup");
+              adMid = document.getElementById("ad-middle-box");
 
-        let score = 0, bestScore = localStorage.getItem("coin_catch_best") || 0;
+        let score = 0, bestScore = localStorage.getItem("coin_catch_best") || 0, playCount = 0;
         let gameActive = false, items = [], playerX, spawnTimer;
-        const playerSize = 35, playerY_offset = 50;
+        const playerSize = 40, playerY_offset = 60;
 
         function resize() {
             canvas.width = canvas.offsetWidth;
@@ -95,7 +102,7 @@
         window.onload = () => { resize(); bestUi.innerText = bestScore; adMid.style.display = "none"; };
         window.onresize = resize;
 
-        goButton.onclick = () => {
+        function startGame() {
             menuScreen.style.display = "none";
             adMid.style.display = "none";
             gameActive = true;
@@ -105,31 +112,33 @@
             resize();
             spawnItem();
             update();
-        };
+        }
 
         function handleMove(e) {
-            if(!gameActive || menuScreen.style.display !== "none") return;
-            const rect = canvas.getBoundingClientRect();
+            if(!gameActive) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const rect = canvas.getBoundingClientRect();
             playerX = clientX - rect.left;
             
+            // 画面端の制限
             if(playerX < playerSize) playerX = playerSize;
             if(playerX > canvas.width - playerSize) playerX = canvas.width - playerSize;
         }
 
+        canvas.addEventListener("touchstart", (e) => handleMove(e), {passive: false});
         canvas.addEventListener("touchmove", (e) => { handleMove(e); e.preventDefault(); }, {passive: false});
         canvas.addEventListener("mousemove", handleMove);
 
         function spawnItem() {
             if(!gameActive) return;
-            const isBomb = Math.random() < 0.25;
+            const isBomb = Math.random() < 0.22;
             items.push({
-                x: Math.random() * (canvas.width - 40) + 20,
+                x: Math.random() * (canvas.width - 50) + 25,
                 y: -30,
                 type: isBomb ? "bomb" : "coin",
-                speed: 3.5 + Math.random() * 3 + (score / 100)
+                speed: 4 + Math.random() * 2 + (score / 150)
             });
-            const nextTime = Math.max(250, 750 - (score / 2));
+            const nextTime = Math.max(280, 850 - (score / 2));
             spawnTimer = setTimeout(spawnItem, nextTime);
         }
 
@@ -139,34 +148,45 @@
 
             const pY = canvas.height - playerY_offset;
 
-            // プレイヤー描画
+            // プレイヤー（スライムくん）
             ctx.fillStyle = "#4caf50";
             ctx.beginPath();
-            ctx.arc(playerX, pY, playerSize, 0, Math.PI, true);
+            ctx.ellipse(playerX, pY, playerSize, playerSize * 0.7, 0, 0, Math.PI * 2);
             ctx.fill();
+            // 目
             ctx.fillStyle = "white";
-            ctx.beginPath(); ctx.arc(playerX - 10, pY - 15, 5, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(playerX + 10, pY - 15, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(playerX - 12, pY - 8, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(playerX + 12, pY - 8, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "black";
+            ctx.beginPath(); ctx.arc(playerX - 12, pY - 8, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(playerX + 12, pY - 8, 3, 0, Math.PI * 2); ctx.fill();
 
             for(let i = items.length - 1; i >= 0; i--) {
                 let it = items[i];
                 it.y += it.speed;
 
                 if(it.type === "coin") {
+                    // コイン描画
                     ctx.fillStyle = "#ffd600";
-                    ctx.beginPath(); ctx.arc(it.x, it.y, 15, 0, Math.PI * 2); ctx.fill();
-                    ctx.strokeStyle = "#f57f17"; ctx.lineWidth = 2; ctx.stroke();
+                    ctx.beginPath(); ctx.arc(it.x, it.y, 16, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = "#f57f17"; ctx.lineWidth = 3; ctx.stroke();
+                    ctx.fillStyle = "#f57f17"; ctx.font = "bold 14px sans-serif"; ctx.textAlign="center";
+                    ctx.fillText("$", it.x, it.y + 5);
                 } else {
+                    // 爆弾描画
                     ctx.fillStyle = "#212121";
                     ctx.beginPath(); ctx.arc(it.x, it.y, 18, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = "red"; ctx.fillRect(it.x - 2, it.y - 28, 4, 10);
+                    ctx.fillStyle = "#f44336"; ctx.beginPath(); ctx.arc(it.x, it.y, 8, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+                    ctx.fillStyle = "#555"; ctx.fillRect(it.x - 2, it.y - 28, 4, 10);
                 }
 
+                // 当たり判定
                 let dx = playerX - it.x;
                 let dy = pY - it.y;
                 let dist = Math.sqrt(dx * dx + dy * dy);
 
-                if(dist < playerSize + 12) {
+                if(dist < playerSize + 10) {
                     if(it.type === "coin") {
                         score += 10;
                         ui.innerText = "SCORE: " + score;
@@ -185,6 +205,7 @@
         function gameOver() {
             gameActive = false;
             clearTimeout(spawnTimer);
+            playCount++;
             if(score > bestScore) {
                 bestScore = score;
                 localStorage.setItem("coin_catch_best", bestScore);
@@ -192,25 +213,45 @@
             }
             menuTitle.innerText = "GAME OVER";
             menuTitle.style.color = "#f44336";
-            menuMsg.innerText = "SCORE: " + score;
-            goButton.innerText = "RETRY";
+            menuMsg.innerText = "RESULT: " + score;
+            goButton.innerText = "お待ちください...";
+            goButton.disabled = true;
 
-            btnGroup.style.opacity = "0";
-            btnGroup.style.pointerEvents = "none";
             adMid.style.display = "flex"; 
             menuScreen.style.display = "flex";
 
             setTimeout(() => {
-                btnGroup.style.opacity = "1";
-                btnGroup.style.pointerEvents = "auto";
-            }, 600);
+                goButton.disabled = false;
+                goButton.innerText = "RETRY GAME";
+            }, 1500);
+
+            if(playCount % 3 === 0) setTimeout(showInterAd, 600);
         }
 
-        setInterval(() => {
-            document.querySelectorAll('iframe').forEach(f => {
-                const s = f.src; f.src = "about:blank"; setTimeout(() => f.src = s, 100);
-            });
-        }, 30000);
+        function showInterAd() {
+            const screen = document.getElementById("inter-screen"), 
+                  closeBtn = document.getElementById("close-ad-btn"), 
+                  ifr = document.getElementById('ifr-inter');
+            ifr.src = './ad.large.html?v=' + Date.now();
+            screen.style.display = "flex";
+            let count = 5;
+            closeBtn.innerText = count;
+            closeBtn.style.pointerEvents = "none";
+            const itv = setInterval(() => {
+                count--;
+                if(count > 0) closeBtn.innerText = count;
+                else {
+                    clearInterval(itv);
+                    closeBtn.innerText = "×";
+                    closeBtn.style.pointerEvents = "auto";
+                }
+            }, 1000);
+        }
+
+        function closeInterAd() {
+            document.getElementById("inter-screen").style.display = "none";
+            document.getElementById('ifr-inter').src = 'about:blank';
+        }
     </script>
 </body>
 </html>
